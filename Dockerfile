@@ -10,18 +10,6 @@ RUN apt-get update \
        | UV_INSTALL_DIR=/usr/local/bin sh \
   && rm -rf /var/lib/apt/lists/*
 
-# armv7 lacks prebuilt wheels for C/Rust extensions (bitarray, cytoolz, cbor2, etc.)
-ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo
-RUN if [ "$(dpkg --print-architecture)" = "armhf" ]; then \
-      apt-get update \
-      && apt-get install -y --no-install-recommends \
-           build-essential python3-dev rustup \
-      && rm -rf /var/lib/apt/lists/* \
-      && rustup set profile minimal \
-      && rustup toolchain install stable; \
-    fi
-
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
     UV_PYTHON_DOWNLOADS=never \
@@ -67,7 +55,6 @@ RUN if [ "$(dpkg --print-architecture)" != "amd64" ]; then \
       && apt-get install -y --no-install-recommends libc6-amd64-cross \
       && rm -rf /var/lib/apt/lists/*; \
     fi
-ENV PATH="/usr/local/cargo/bin:${PATH}"
 
 RUN useradd --create-home slither
 USER slither
