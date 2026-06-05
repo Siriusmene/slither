@@ -27,15 +27,22 @@ RUN if [ ! "$(uname -m)" = "x86_64" ]; then \
   && apt-get install -y --no-install-recommends libc6-amd64-cross \
   && rm -rf /var/lib/apt/lists/*; fi
 
-# Install build tools only on armv7 (needed for pip to compile wheels)
-# amd64/arm64 use uv with pre-built wheels, so they don't need these
+# Install build tools only on armv7 (needed for pip to compile wheels).
+# amd64/arm64 use uv with pre-built wheels, so they don't need these.
+# cbor2 6.x is implemented in Rust and has no prebuilt armv7 wheel, so a Rust
+# toolchain is required to compile it from source.
+ENV RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo
 RUN arch=$(uname -m) && \
     if [ "$arch" = "armv7l" ]; then \
       export DEBIAN_FRONTEND=noninteractive && \
       apt-get update && \
       apt-get install -y --no-install-recommends build-essential python3-dev && \
-      rm -rf /var/lib/apt/lists/*; \
+      rm -rf /var/lib/apt/lists/* && \
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+        | sh -s -- -y --no-modify-path --profile minimal && \
+      chmod -R a+rwX "$RUSTUP_HOME" "$CARGO_HOME"; \
     fi
+ENV PATH="/usr/local/cargo/bin:${PATH}"
 
 RUN useradd -m slither
 USER slither
